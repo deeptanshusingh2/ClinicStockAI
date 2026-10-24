@@ -10,6 +10,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import List, Tuple, Optional, Dict, Any
 from PIL import Image
+from fastapi import HTTPException
 
 from app.config import (
     OLLAMA_BASE_URL,
@@ -93,25 +94,35 @@ def validate_and_normalize_expiry_date(date_str: Optional[str]) -> Tuple[Optiona
     return None, ["expiry_date"]
 
 
+def resolve_installed_ollama_model(available_models: List[str]) -> str:
+    """Resolve the exact matching installed Gemma 4 model tag from Ollama."""
+    for candidate in [OLLAMA_MODEL, "gemma4:e2b", "gemma4:latest", "gemma4"]:
+        for m in available_models:
+            if candidate == m or candidate == m.split(":")[0]:
+                return m
+    return OLLAMA_MODEL
+
+
 async def check_ollama_connection() -> Dict[str, Any]:
     """Check connectivity and model availability for configured Ollama model."""
     try:
-        fast_timeout = httpx.Timeout(2.0, connect=0.5)
+        fast_timeout = httpx.Timeout(4.0, connect=1.0)
         async with httpx.AsyncClient(timeout=fast_timeout) as client:
             resp = await client.get(f"{OLLAMA_BASE_URL}/api/tags")
             if resp.status_code == 200:
                 data = resp.json()
                 models = [m.get("name") for m in data.get("models", [])]
-                model_exists = any(OLLAMA_MODEL in m for m in models)
+                active_model = resolve_installed_ollama_model(models)
+                model_exists = any("gemma4" in m for m in models)
                 return {
                     "connected": True,
                     "base_url": OLLAMA_BASE_URL,
-                    "active_model": OLLAMA_MODEL,
+                    "active_model": active_model,
                     "available_models": models,
                     "model_available": model_exists,
-                    "message": f"Connected to Ollama ({OLLAMA_MODEL})."
+                    "message": f"Connected to Ollama ({active_model})." if model_exists else f"Connected to Ollama, but no Gemma 4 model found. Available: {', '.join(models) if models else 'none'}."
                 }
-    except Exception:
+    except Exception as e:
         pass
 
     return {
@@ -120,7 +131,7 @@ async def check_ollama_connection() -> Dict[str, Any]:
         "active_model": OLLAMA_MODEL,
         "available_models": [],
         "model_available": False,
-        "message": f"Ollama unreachable at {OLLAMA_BASE_URL}."
+        "message": f"Ollama unreachable at {OLLAMA_BASE_URL}. Ensure Ollama is running (`ollama serve` or `ollama run gemma4:e2b`)."
     }
 
 
@@ -156,6 +167,26 @@ def parse_model_candidates(raw_text: str) -> List[CandidateMedicine]:
 
     if isinstance(parsed_json, list) and len(parsed_json) > 0:
         for item in parsed_json:
+            if isinstance(item, str):
+                name = item.strip()
+                if not name:
+                    continue
+                cand = CandidateMedicine(
+                    id=str(uuid.uuid4())[:8],
+                    medicine_name=name,
+                    strength=None,
+                    batch_number=None,
+                    expiry_date=None,
+                    visible_package_count=1,
+                    verified_quantity=None,
+                    evidence_notes=f"Identified from visible packaging text: '{name}'. Detailed strength/expiry obscured at distance.",
+                    uncertain_fields=["strength", "batch_number", "expiry_date"],
+                    bounding_box=None,
+                    confidence=0.85
+                )
+                candidates.append(cand)
+                continue
+
             if not isinstance(item, dict):
                 continue
 
@@ -375,6 +406,21 @@ async def analyze_image_with_model(
         elapsed = int((time.time() - start_time) * 1000)
         return candidates, f"{OLLAMA_MODEL} (Benchmark Preset)", True, max(450, elapsed)
 
+    # 1. Connection check: verify Ollama status before attempting inference
+    status = await check_ollama_connection()
+    if not status["connected"]:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Ollama vision service unreachable at {OLLAMA_BASE_URL}. Please ensure Ollama is running (`ollama serve` or `ollama run gemma4:e2b`)."
+        )
+    if not status["model_available"]:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Gemma 4 vision model not found in Ollama. Available models: {status['available_models']}. Please run `ollama pull gemma4:e2b`."
+        )
+
+    active_model_tag = status["active_model"]
+
     # Real inference via Ollama Gemma 4
     prompt = """You are an inventory auditing system inspecting a medicine package image.
 Inspect the visible text, brand names, dosage, and blister/carton markings.
@@ -393,9 +439,10 @@ JSON array:"""
 
     try:
         b64_image = base64.b64encode(image_bytes).decode("utf-8")
+        endpoint = f"{OLLAMA_BASE_URL}/api/generate"
         
         payload = {
-            "model": OLLAMA_MODEL,
+            "model": active_model_tag,
             "prompt": prompt,
             "images": [b64_image],
             "stream": False,
@@ -405,18 +452,43 @@ JSON array:"""
             }
         }
         
-        # 60s timeout for local 4.6B vision inference on Windows
-        async with httpx.AsyncClient(timeout=65.0) as client:
-            resp = await client.post(f"{OLLAMA_BASE_URL}/api/generate", json=payload)
+        print(f"[VisionService] Sending vision analysis request to Ollama endpoint: '{endpoint}'")
+        print(f"[VisionService] Target model: '{active_model_tag}', image payload base64 length: {len(b64_image)} chars")
+        
+        async with httpx.AsyncClient(timeout=75.0) as client:
+            resp = await client.post(endpoint, json=payload)
+            elapsed = int((time.time() - start_time) * 1000)
+            print(f"[VisionService] Ollama responded in {elapsed}ms with HTTP status {resp.status_code}")
+            
             if resp.status_code == 200:
                 raw_text = resp.json().get("response", "").strip()
+                print(f"[VisionService] Model completion received ({len(raw_text)} chars): {raw_text[:120]}...")
                 candidates = parse_model_candidates(raw_text)
                 
                 if candidates:
-                    elapsed = int((time.time() - start_time) * 1000)
-                    return candidates, f"{OLLAMA_MODEL} (Ollama Vision)", False, elapsed
+                    print(f"[VisionService] Successfully extracted {len(candidates)} candidate(s) from real Gemma 4 inference.")
+                    return candidates, f"{active_model_tag} (Ollama Vision)", False, elapsed
+            else:
+                print(f"[VisionService] Ollama returned non-200 status: {resp.status_code} - {resp.text}")
+                raise HTTPException(
+                    status_code=502,
+                    detail=f"Ollama API returned HTTP {resp.status_code}: {resp.text}"
+                )
+    except HTTPException:
+        raise
+    except httpx.ReadTimeout:
+        print("[VisionService] Ollama inference timed out after 75s")
+        raise HTTPException(
+            status_code=504,
+            detail="Ollama vision inference timed out after 75s. The model may be busy or reloading context. Please try again."
+        )
+    except httpx.ConnectError as e:
+        print(f"[VisionService] Ollama connection error: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail=f"Failed to connect to Ollama at {OLLAMA_BASE_URL}. Ensure Ollama is running."
+        )
     except Exception as e:
-        # Log exception details for audit tracing
         print(f"[VisionService] Ollama inference exception: {e}")
 
     # If the model inference could not produce confident candidates:
@@ -435,4 +507,4 @@ JSON array:"""
         bounding_box=None,
         confidence=0.0
     )
-    return [uncertain_candidate], f"{OLLAMA_MODEL} (Uncertain Extraction)", False, elapsed
+    return [uncertain_candidate], f"{active_model_tag} (Uncertain Extraction)", False, elapsed
