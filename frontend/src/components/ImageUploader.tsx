@@ -9,9 +9,10 @@ import {
   Eye,
   Camera,
   Layers,
-  HelpCircle
+  HelpCircle,
+  ArrowRight
 } from 'lucide-react';
-import { SampleImage } from '../types';
+import { SampleImage, OllamaStatus } from '../types';
 import { api } from '../api/client';
 
 interface ImageUploaderProps {
@@ -19,6 +20,8 @@ interface ImageUploaderProps {
   onAnalysisComplete: (result: any) => void;
   onError: (msg: string) => void;
   isAnalyzing: boolean;
+  ollamaStatus?: OllamaStatus | null;
+  onTestConnection?: () => void;
 }
 
 export const ImageUploader: React.FC<ImageUploaderProps> = ({
@@ -26,6 +29,8 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   onAnalysisComplete,
   onError,
   isAnalyzing,
+  ollamaStatus,
+  onTestConnection,
 }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -118,6 +123,11 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       return;
     }
 
+    if (selectedFile && ollamaStatus && !ollamaStatus.connected) {
+      onError(`Ollama is disconnected: ${ollamaStatus.message || 'Server unreachable at http://127.0.0.1:11434'}. Please run 'ollama serve' or click Test Connection above.`);
+      return;
+    }
+
     try {
       onAnalysisStart();
       let result;
@@ -141,15 +151,40 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Disconnection Alert Banner if Ollama is unreachable */}
+      {ollamaStatus && !ollamaStatus.connected && (
+        <div className="bg-[#fbeeed] border border-[#f5c6c5] rounded-3xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-[#a32220] shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <AlertCircle className="w-5 h-5 text-[#c23330] shrink-0" />
+            <div>
+              <p className="font-bold text-[#8d1d1b]">Ollama API Disconnected</p>
+              <p className="text-stone-600 mt-0.5">
+                {ollamaStatus.message || 'Ollama is unreachable at http://127.0.0.1:11434'}. Custom photo analysis requires Ollama running with Gemma 4.
+              </p>
+            </div>
+          </div>
+          {onTestConnection && (
+            <button
+              onClick={onTestConnection}
+              className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-stone-50 text-[#8d1d1b] border border-[#e5a8a6] text-xs font-bold shrink-0 cursor-pointer shadow-sm transition"
+            >
+              Test Connection
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Top Banner / Core Principle Reminder */}
-      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-white border border-stone-200/70 rounded-3xl p-5 shadow-[0_4px_24px_rgba(30,50,20,0.04)] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-start gap-3.5">
-          <div className="p-2.5 rounded-xl bg-teal-500/10 text-teal-400 border border-teal-500/20 shrink-0">
+          <div className="p-3 rounded-2xl bg-[#edf4ea] text-[#3e5e32] border border-[#d6e7ce] shrink-0">
             <Camera className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-base font-semibold text-white">Visual Shelf Inventory Audit</h2>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <h2 className="text-base font-extrabold text-stone-900 tracking-tight">
+              Visual Shelf Inventory Audit
+            </h2>
+            <p className="text-xs text-stone-500 mt-0.5">
               Scan clear or challenging shelf photos. AI drafts structured records with uncertainty flags; authorized staff verify all stock.
             </p>
           </div>
@@ -159,9 +194,9 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isAnalyzing}
-            className="px-3.5 py-2 text-xs font-medium text-slate-200 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition flex items-center gap-2"
+            className="px-4 py-2 text-xs font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 rounded-xl transition flex items-center gap-2 cursor-pointer"
           >
-            <UploadCloud className="w-4 h-4 text-teal-400" />
+            <UploadCloud className="w-4 h-4 text-[#476c38]" />
             <span>Upload Custom Photo</span>
           </button>
           <input
@@ -178,17 +213,17 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Sample Shelf Selector & Guidelines */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5">
+          <div className="bg-white border border-stone-200/70 rounded-3xl p-5 shadow-[0_4px_24px_rgba(30,50,20,0.04)]">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-                <Layers className="w-4 h-4 text-teal-400" />
+              <h3 className="text-sm font-bold text-stone-800 flex items-center gap-2">
+                <Layers className="w-4 h-4 text-[#476c38]" />
                 <span>Test Benchmark Scenarios</span>
               </h3>
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#edf4ea] text-[#345129]">
                 1-Click Preset
               </span>
             </div>
-            <p className="text-xs text-slate-400 mb-4">
+            <p className="text-xs text-stone-500 mb-4">
               Select a pre-annotated test shelf to inspect how VisionStock isolates clean labels versus glaring unreadable dates.
             </p>
 
@@ -200,36 +235,36 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                     key={sample.id}
                     onClick={() => handleSelectSample(sample)}
                     disabled={isAnalyzing}
-                    className={`w-full text-left p-3.5 rounded-xl border transition-all flex items-start gap-3.5 ${
+                    className={`w-full text-left p-3.5 rounded-2xl border transition-all flex items-start gap-3.5 cursor-pointer ${
                       isSelected
-                        ? 'bg-teal-950/40 border-teal-500/50 shadow-sm shadow-teal-500/10'
-                        : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 hover:bg-slate-850'
+                        ? 'bg-[#f0f6ec] border-[#4e7140] shadow-sm'
+                        : 'bg-stone-50/60 border-stone-200/80 hover:bg-stone-100'
                     }`}
                   >
-                    <div className="w-16 h-12 rounded-lg overflow-hidden bg-slate-950 border border-slate-800 shrink-0 relative">
+                    <div className="w-16 h-12 rounded-xl overflow-hidden bg-stone-100 border border-stone-200 shrink-0 relative">
                       <img
                         src={sample.url}
                         alt={sample.title}
                         className="w-full h-full object-cover"
                       />
                       {isSelected && (
-                        <div className="absolute inset-0 bg-teal-500/20 flex items-center justify-center">
-                          <CheckCircle2 className="w-4 h-4 text-teal-400" />
+                        <div className="absolute inset-0 bg-[#4e7140]/25 flex items-center justify-center">
+                          <CheckCircle2 className="w-4 h-4 text-[#26441b]" />
                         </div>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className={`text-xs font-semibold truncate ${isSelected ? 'text-teal-300' : 'text-slate-200'}`}>
+                      <h4 className={`text-xs font-bold truncate ${isSelected ? 'text-[#26441b]' : 'text-stone-800'}`}>
                         {sample.title}
                       </h4>
-                      <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">
+                      <p className="text-[11px] text-stone-500 line-clamp-1 mt-0.5">
                         {sample.description}
                       </p>
                       <div className="flex flex-wrap gap-1 mt-2">
                         {sample.features.slice(0, 2).map((feat, idx) => (
                           <span
                             key={idx}
-                            className="text-[10px] px-1.5 py-0.2 rounded bg-slate-800/80 text-slate-300 border border-slate-700/50"
+                            className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-white text-stone-600 border border-stone-200/70"
                           >
                             {feat}
                           </span>
@@ -243,12 +278,12 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
           </div>
 
           {/* Verification Protocol Callout */}
-          <div className="bg-slate-900/30 border border-slate-800/60 rounded-2xl p-4 text-xs text-slate-400 space-y-2">
-            <div className="flex items-center gap-2 text-slate-300 font-medium">
-              <HelpCircle className="w-4 h-4 text-teal-400" />
+          <div className="bg-[#edf4ea] border border-[#d3e3cc] rounded-3xl p-5 text-xs text-stone-600 space-y-2">
+            <div className="flex items-center gap-2 text-[#2b4b20] font-bold">
+              <HelpCircle className="w-4 h-4 text-[#476c38]" />
               <span>VisionStock Audit Rules</span>
             </div>
-            <ul className="list-disc list-inside space-y-1 text-[11px] text-slate-400">
+            <ul className="list-disc list-inside space-y-1 text-[11px] text-stone-600">
               <li>Visible package count is an optical estimate, never total inventory.</li>
               <li>Missing or obscured expiry dates are marked null (never hallucinated).</li>
               <li>Unverified drafts are strictly excluded from confirmed totals.</li>
@@ -263,35 +298,35 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
             onDragLeave={handleDrag}
             onDragOver={handleDrag}
             onDrop={handleDrop}
-            className={`relative flex-1 min-h-[360px] rounded-2xl border-2 transition-all flex flex-col items-center justify-center overflow-hidden ${
+            className={`relative flex-1 min-h-[380px] rounded-3xl border-2 transition-all flex flex-col items-center justify-center overflow-hidden shadow-[0_4px_24px_rgba(30,50,20,0.04)] ${
               dragActive
-                ? 'border-teal-500 bg-teal-950/20'
+                ? 'border-[#4e7140] bg-[#eef5eb]'
                 : previewUrl
-                ? 'border-slate-800 bg-slate-950'
-                : 'border-dashed border-slate-700 bg-slate-900/20 hover:border-slate-600'
+                ? 'border-stone-200 bg-white'
+                : 'border-dashed border-stone-300 bg-white hover:border-[#4e7140]'
             }`}
           >
             {previewUrl ? (
-              <div className="relative w-full h-full min-h-[360px] flex items-center justify-center p-3">
+              <div className="relative w-full h-full min-h-[380px] flex items-center justify-center p-4">
                 <img
                   src={previewUrl}
                   alt="Shelf Preview"
-                  className="max-h-[380px] w-auto max-w-full rounded-xl object-contain shadow-2xl border border-slate-800"
+                  className="max-h-[390px] w-auto max-w-full rounded-2xl object-contain shadow-md border border-stone-200"
                 />
 
                 {/* Laser Scanning Animation Overlay */}
                 {isAnalyzing && (
-                  <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-xs flex flex-col items-center justify-center p-6 transition-all">
+                  <div className="absolute inset-0 bg-stone-900/60 backdrop-blur-xs flex flex-col items-center justify-center p-6 transition-all">
                     {/* Glowing scanning bar */}
-                    <div className="absolute w-full h-1 bg-gradient-to-r from-transparent via-teal-400 to-transparent shadow-[0_0_15px_#2dd4bf] animate-scanner-line" />
+                    <div className="absolute w-full h-1 bg-gradient-to-r from-transparent via-[#d6f54c] to-transparent shadow-[0_0_15px_#d6f54c] animate-scanner-line" />
 
-                    <div className="bg-slate-900/90 border border-teal-500/40 rounded-2xl p-6 max-w-md w-full shadow-2xl shadow-teal-500/10 text-center space-y-4">
-                      <div className="inline-flex p-3 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/30 animate-spin">
+                    <div className="bg-white border border-stone-200 rounded-3xl p-6 max-w-md w-full shadow-2xl text-center space-y-4">
+                      <div className="inline-flex p-3 rounded-full bg-[#edf4ea] text-[#345129] border border-[#d6e7ce] animate-spin">
                         <RefreshCw className="w-6 h-6" />
                       </div>
                       <div>
-                        <h4 className="text-sm font-semibold text-white">Visual Audit In Progress</h4>
-                        <p className="text-xs text-teal-300 font-mono mt-1">
+                        <h4 className="text-sm font-bold text-stone-900">Visual Audit In Progress</h4>
+                        <p className="text-xs text-[#395b2c] font-medium mt-1">
                           {scanStepsText[scanStep]}
                         </p>
                       </div>
@@ -302,7 +337,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                           <div
                             key={s}
                             className={`h-1.5 rounded-full transition-all ${
-                              s <= scanStep ? 'w-8 bg-teal-400' : 'w-2 bg-slate-700'
+                              s <= scanStep ? 'w-8 bg-[#496f3c]' : 'w-2 bg-stone-200'
                             }`}
                           />
                         ))}
@@ -314,7 +349,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                 {/* Clear / Retake pill */}
                 {!isAnalyzing && (
                   <div className="absolute top-4 right-4 flex items-center gap-2">
-                    <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-slate-900/90 text-slate-300 border border-slate-700 shadow-md">
+                    <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-white/95 text-stone-800 border border-stone-200 shadow-md">
                       {selectedFile ? selectedFile.name : selectedSample?.title}
                     </span>
                     <button
@@ -323,7 +358,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                         setSelectedSample(null);
                         setPreviewUrl(null);
                       }}
-                      className="p-1.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-700 shadow-md transition"
+                      className="p-1.5 rounded-xl bg-white/95 hover:bg-stone-50 text-stone-500 hover:text-stone-900 border border-stone-200 shadow-md transition cursor-pointer"
                       title="Clear photo"
                     >
                       <RefreshCw className="w-3.5 h-3.5" />
@@ -333,20 +368,20 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
               </div>
             ) : (
               <div className="text-center p-8 space-y-3">
-                <div className="mx-auto w-12 h-12 rounded-xl bg-slate-800 text-slate-400 flex items-center justify-center border border-slate-700">
-                  <UploadCloud className="w-6 h-6 text-teal-400" />
+                <div className="mx-auto w-12 h-12 rounded-2xl bg-[#edf4ea] text-[#395b2c] flex items-center justify-center border border-[#d6e7ce]">
+                  <UploadCloud className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-slate-200">
+                  <p className="text-sm font-bold text-stone-800">
                     Drop a medicine shelf photo here, or browse
                   </p>
-                  <p className="text-xs text-slate-500 mt-1">
+                  <p className="text-xs text-stone-400 mt-1">
                     Accepts JPG, PNG, WEBP up to 8 MB
                   </p>
                 </div>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="px-4 py-2 text-xs font-semibold text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 rounded-lg border border-teal-500/30 transition"
+                  className="px-4 py-2 text-xs font-bold text-[#2a471f] bg-[#edf4ea] hover:bg-[#e0edd9] rounded-xl border border-[#cde0c5] transition cursor-pointer"
                 >
                   Select Photo File
                 </button>
@@ -356,8 +391,8 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
 
           {/* Action Trigger Bar */}
           <div className="mt-4 flex items-center justify-between gap-4">
-            <div className="text-xs text-slate-400 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-teal-400"></span>
+            <div className="text-xs text-stone-500 flex items-center gap-1.5 font-medium">
+              <span className="w-2 h-2 rounded-full bg-[#4e7140]"></span>
               <span>{previewUrl ? 'Ready for vision inference' : 'Awaiting shelf image'}</span>
             </div>
 
@@ -365,20 +400,20 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
               id="btn-analyze-shelf"
               onClick={handleStartAnalysis}
               disabled={isAnalyzing || !previewUrl}
-              className={`px-6 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 shadow-lg ${
+              className={`px-6 py-2.5 rounded-2xl font-bold text-sm transition-all flex items-center gap-2 shadow-md cursor-pointer ${
                 isAnalyzing || !previewUrl
-                  ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-white shadow-teal-500/25 hover:shadow-teal-500/40 hover:scale-[1.01]'
+                  ? 'bg-stone-200 text-stone-400 cursor-not-allowed'
+                  : 'bg-[#e2fa6c] hover:bg-[#d6f254] text-[#1b3419] shadow-sm hover:scale-[1.01]'
               }`}
             >
               {isAnalyzing ? (
                 <>
-                  <RefreshCw className="w-4 h-4 animate-spin text-white" />
+                  <RefreshCw className="w-4 h-4 animate-spin text-[#1b3419]" />
                   <span>Auditing Shelf...</span>
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-4 h-4 text-white" />
+                  <Sparkles className="w-4 h-4 text-[#1b3419]" />
                   <span>Analyze Shelf with VisionStock</span>
                 </>
               )}

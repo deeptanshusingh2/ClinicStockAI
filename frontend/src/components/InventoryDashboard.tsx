@@ -4,7 +4,6 @@ import {
   Plus,
   Download,
   Trash2,
-  Edit2,
   Calendar,
   Package,
   AlertCircle,
@@ -34,7 +33,6 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
-  const [editingRecord, setEditingRecord] = useState<InventoryRecord | null>(null);
 
   const loadInventory = async () => {
     try {
@@ -132,56 +130,64 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Top Stat Cards */}
+      {/* Top Stat Cards matching the warm sage and crisp white design */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4">
-          <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
+        <div className="bg-white border border-stone-200/70 rounded-3xl p-5 shadow-[0_4px_24px_rgba(30,50,20,0.04)]">
+          <div className="flex items-center justify-between text-xs text-stone-500 font-semibold mb-1">
             <span>Total Verified SKUs</span>
-            <Layers className="w-4 h-4 text-teal-400" />
+            <div className="w-7 h-7 rounded-xl bg-[#edf4ea] text-[#3b5b2e] flex items-center justify-center">
+              <Layers className="w-3.5 h-3.5" />
+            </div>
           </div>
-          <div className="text-2xl font-bold text-white font-mono">{records.length}</div>
-          <div className="text-[11px] text-slate-500 mt-1">Confirmed catalog lines</div>
+          <div className="text-3xl font-extrabold text-stone-900 font-mono tracking-tight">{records.length}</div>
+          <div className="text-[11px] text-stone-400 mt-1 font-medium">Confirmed catalog lines</div>
         </div>
 
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4">
-          <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
+        <div className="bg-white border border-stone-200/70 rounded-3xl p-5 shadow-[0_4px_24px_rgba(30,50,20,0.04)]">
+          <div className="flex items-center justify-between text-xs text-stone-500 font-semibold mb-1">
             <span>Total Physical Units</span>
-            <Package className="w-4 h-4 text-emerald-400" />
+            <div className="w-7 h-7 rounded-xl bg-[#ebf7ec] text-[#2c7739] flex items-center justify-center">
+              <Package className="w-3.5 h-3.5" />
+            </div>
           </div>
-          <div className="text-2xl font-bold text-emerald-300 font-mono">{totalUnits}</div>
-          <div className="text-[11px] text-slate-500 mt-1">Confirmed in dispensary</div>
+          <div className="text-3xl font-extrabold text-[#285f31] font-mono tracking-tight">{totalUnits}</div>
+          <div className="text-[11px] text-stone-400 mt-1 font-medium">Confirmed in dispensary</div>
         </div>
 
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4">
-          <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
+        <div className="bg-white border border-stone-200/70 rounded-3xl p-5 shadow-[0_4px_24px_rgba(30,50,20,0.04)]">
+          <div className="flex items-center justify-between text-xs text-stone-500 font-semibold mb-1">
             <span>Critical (&lt;30 Days)</span>
-            <Clock className="w-4 h-4 text-amber-400" />
+            <div className="w-7 h-7 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center">
+              <Clock className="w-3.5 h-3.5" />
+            </div>
           </div>
-          <div className="text-2xl font-bold text-amber-300 font-mono">{criticalCount}</div>
-          <div className="text-[11px] text-slate-500 mt-1">Approaching expiration</div>
+          <div className="text-3xl font-extrabold text-amber-800 font-mono tracking-tight">{criticalCount}</div>
+          <div className="text-[11px] text-stone-400 mt-1 font-medium">Approaching expiration</div>
         </div>
 
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4">
-          <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
+        <div className="bg-white border border-stone-200/70 rounded-3xl p-5 shadow-[0_4px_24px_rgba(30,50,20,0.04)]">
+          <div className="flex items-center justify-between text-xs text-stone-500 font-semibold mb-1">
             <span>Expired Batches</span>
-            <AlertCircle className="w-4 h-4 text-red-400" />
+            <div className="w-7 h-7 rounded-xl bg-red-50 text-red-700 flex items-center justify-center">
+              <AlertCircle className="w-3.5 h-3.5" />
+            </div>
           </div>
-          <div className="text-2xl font-bold text-red-400 font-mono">{expiredCount}</div>
-          <div className="text-[11px] text-slate-500 mt-1">Requires quarantine</div>
+          <div className="text-3xl font-extrabold text-red-700 font-mono tracking-tight">{expiredCount}</div>
+          <div className="text-[11px] text-stone-400 mt-1 font-medium">Requires quarantine</div>
         </div>
       </div>
 
       {/* Action Toolbar */}
-      <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+      <div className="bg-white border border-stone-200/70 rounded-3xl p-4 shadow-[0_4px_24px_rgba(30,50,20,0.04)] flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
         {/* Search */}
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3.5 top-3 w-4 h-4 text-stone-400" />
           <input
             type="text"
             placeholder="Search medicine name or batch code..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full text-xs text-white bg-slate-950 border border-slate-700/80 rounded-xl pl-10 pr-4 py-2.5 focus:border-teal-400 focus:outline-none"
+            className="w-full text-xs text-stone-900 bg-stone-50 border border-stone-200 rounded-2xl pl-10 pr-4 py-2.5 focus:border-[#4d7040] focus:bg-white focus:outline-none transition"
           />
         </div>
 
@@ -197,10 +203,10 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({
             <button
               key={f.id}
               onClick={() => setStatusFilter(f.id)}
-              className={`px-3 py-1.5 rounded-lg font-medium transition ${
+              className={`px-3 py-1.5 rounded-xl font-bold transition cursor-pointer ${
                 statusFilter === f.id
-                  ? 'bg-teal-500/10 text-teal-300 border border-teal-500/30'
-                  : 'bg-slate-800/60 text-slate-400 hover:text-white border border-slate-700/50'
+                  ? 'bg-[#edf4ea] text-[#28461f] border border-[#cbe0c3]'
+                  : 'bg-stone-50 text-stone-600 hover:text-stone-900 border border-stone-200/60'
               }`}
             >
               {f.label}
@@ -212,16 +218,16 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({
         <div className="flex items-center gap-2 self-end md:self-auto">
           <button
             onClick={exportCSV}
-            className="px-3.5 py-2 text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-xl flex items-center gap-1.5 transition"
+            className="px-4 py-2 text-xs font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 border border-stone-200/70 rounded-2xl flex items-center gap-1.5 transition cursor-pointer"
             title="Download CSV"
           >
-            <Download className="w-3.5 h-3.5 text-teal-400" />
+            <Download className="w-3.5 h-3.5 text-[#3e5e32]" />
             <span>Export CSV</span>
           </button>
 
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="px-4 py-2 text-xs font-semibold text-white bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 rounded-xl shadow-md flex items-center gap-1.5 transition"
+            className="px-4 py-2 text-xs font-bold text-[#1b3419] bg-[#e2fa6c] hover:bg-[#d6f254] rounded-2xl shadow-sm flex items-center gap-1.5 transition cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>+ Add Manually</span>
@@ -230,26 +236,26 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({
       </div>
 
       {/* Inventory Table */}
-      <div className="bg-slate-900/50 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+      <div className="bg-white border border-stone-200/70 rounded-3xl overflow-hidden shadow-[0_4px_24px_rgba(30,50,20,0.04)]">
         {loading ? (
-          <div className="p-12 text-center text-slate-400">Loading verified inventory...</div>
+          <div className="p-12 text-center text-stone-500">Loading verified inventory...</div>
         ) : filteredRecords.length === 0 ? (
           <div className="p-12 text-center space-y-3">
-            <Package className="w-10 h-10 text-slate-600 mx-auto" />
-            <h3 className="text-sm font-semibold text-slate-300">No verified inventory found</h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            <Package className="w-10 h-10 text-stone-400 mx-auto" />
+            <h3 className="text-sm font-bold text-stone-800">No verified inventory found</h3>
+            <p className="text-xs text-stone-500 max-w-sm mx-auto">
               Scan a medicine shelf to draft records and verify them, or manually add your first stock entry.
             </p>
             <div className="flex items-center justify-center gap-3 pt-2">
               <button
                 onClick={onNavigateToAudit}
-                className="px-4 py-2 text-xs font-semibold text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 rounded-lg transition"
+                className="px-4 py-2 text-xs font-bold text-[#1b3419] bg-[#e2fa6c] hover:bg-[#d6f254] rounded-2xl transition cursor-pointer"
               >
                 Start Shelf Scan
               </button>
               <button
                 onClick={() => setIsAddModalOpen(true)}
-                className="px-4 py-2 text-xs font-semibold text-slate-300 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition"
+                className="px-4 py-2 text-xs font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 border border-stone-200 rounded-2xl transition cursor-pointer"
               >
                 Add Medicine Manually
               </button>
@@ -258,36 +264,36 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-950/80 text-slate-400 uppercase tracking-wider border-b border-slate-800 text-[11px]">
+              <thead className="bg-[#edf2e6]/80 text-stone-600 uppercase tracking-wider border-b border-stone-200 text-[11px]">
                 <tr>
-                  <th className="py-3.5 px-4 font-semibold">Medicine & Strength</th>
-                  <th className="py-3.5 px-4 font-semibold">Batch Code</th>
-                  <th className="py-3.5 px-4 font-semibold">Expiry Date & Risk</th>
-                  <th className="py-3.5 px-4 font-semibold">Confirmed Quantity</th>
-                  <th className="py-3.5 px-4 font-semibold">Audit Source</th>
-                  <th className="py-3.5 px-4 font-semibold text-right">Actions</th>
+                  <th className="py-3.5 px-5 font-bold">Medicine & Strength</th>
+                  <th className="py-3.5 px-4 font-bold">Batch Code</th>
+                  <th className="py-3.5 px-4 font-bold">Expiry Date & Risk</th>
+                  <th className="py-3.5 px-4 font-bold">Confirmed Quantity</th>
+                  <th className="py-3.5 px-4 font-bold">Audit Source</th>
+                  <th className="py-3.5 px-5 font-bold text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/80 text-slate-200">
+              <tbody className="divide-y divide-stone-100 text-stone-800">
                 {filteredRecords.map((r) => {
                   return (
-                    <tr key={r.id} className="hover:bg-slate-800/30 transition">
+                    <tr key={r.id} className="hover:bg-[#f6f9f3] transition">
                       {/* Name & Strength */}
-                      <td className="py-3 px-4">
-                        <div className="font-semibold text-white text-xs">{r.medicine_name}</div>
+                      <td className="py-3 px-5">
+                        <div className="font-bold text-stone-900 text-xs">{r.medicine_name}</div>
                         {r.strength && (
-                          <div className="text-[11px] text-teal-400 font-mono mt-0.5">{r.strength}</div>
+                          <div className="text-[11px] text-[#3f6333] font-mono mt-0.5 font-semibold">{r.strength}</div>
                         )}
                       </td>
 
                       {/* Batch Code */}
                       <td className="py-3 px-4">
                         {r.batch_number ? (
-                          <span className="font-mono text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                          <span className="font-mono text-xs px-2.5 py-0.5 rounded-lg bg-stone-100 text-stone-700 border border-stone-200">
                             {r.batch_number}
                           </span>
                         ) : (
-                          <span className="text-slate-500 italic text-[11px]">—</span>
+                          <span className="text-stone-400 italic text-[11px]">—</span>
                         )}
                       </td>
 
@@ -295,28 +301,28 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({
                       <td className="py-3 px-4">
                         {r.expiry_date ? (
                           <div>
-                            <div className="font-mono text-xs text-slate-300">{r.expiry_date}</div>
+                            <div className="font-mono text-xs font-semibold text-stone-800">{r.expiry_date}</div>
                             {r.urgency === 'expired' && (
-                              <span className="inline-block mt-0.5 text-[10px] font-semibold text-red-400 bg-red-950/40 border border-red-500/30 px-1.5 py-0.2 rounded">
+                              <span className="inline-block mt-0.5 text-[10px] font-bold text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
                                 Expired ({Math.abs(r.days_until_expiry || 0)}d ago)
                               </span>
                             )}
                             {r.urgency === 'critical' && (
-                              <span className="inline-block mt-0.5 text-[10px] font-semibold text-amber-400 bg-amber-950/40 border border-amber-500/30 px-1.5 py-0.2 rounded">
+                              <span className="inline-block mt-0.5 text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
                                 Expires in {r.days_until_expiry}d
                               </span>
                             )}
                             {r.urgency === 'warning' && (
-                              <span className="inline-block mt-0.5 text-[10px] font-medium text-yellow-300 bg-yellow-950/40 border border-yellow-500/30 px-1.5 py-0.2 rounded">
+                              <span className="inline-block mt-0.5 text-[10px] font-semibold text-amber-900 bg-yellow-50 border border-yellow-200 px-2 py-0.5 rounded-full">
                                 In {r.days_until_expiry} days
                               </span>
                             )}
                             {(!r.urgency || r.urgency === 'upcoming') && (
-                              <span className="text-[10px] text-slate-500">Good standing</span>
+                              <span className="text-[10px] font-medium text-stone-400">Good standing</span>
                             )}
                           </div>
                         ) : (
-                          <span className="text-slate-500 italic text-[11px]">Unrecorded</span>
+                          <span className="text-stone-400 italic text-[11px]">Unrecorded</span>
                         )}
                       </td>
 
@@ -325,16 +331,16 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({
                         <div className="flex items-center gap-1.5">
                           <button
                             onClick={() => handleUpdateQuantity(r, -1)}
-                            className="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center font-bold text-xs"
+                            className="w-7 h-7 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 flex items-center justify-center font-bold text-xs transition cursor-pointer"
                           >
                             -
                           </button>
-                          <span className="font-mono font-bold text-sm text-white px-2">
+                          <span className="font-mono font-extrabold text-sm text-stone-900 px-2 min-w-[2rem] text-center">
                             {r.verified_quantity}
                           </span>
                           <button
                             onClick={() => handleUpdateQuantity(r, 1)}
-                            className="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center font-bold text-xs"
+                            className="w-7 h-7 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 flex items-center justify-center font-bold text-xs transition cursor-pointer"
                           >
                             +
                           </button>
@@ -344,10 +350,10 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({
                       {/* Source */}
                       <td className="py-3 px-4">
                         <span
-                          className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${
+                          className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
                             r.source === 'photo_assisted'
-                              ? 'bg-teal-500/10 text-teal-300 border-teal-500/30'
-                              : 'bg-slate-800 text-slate-400 border-slate-700'
+                              ? 'bg-[#edf4ea] text-[#294620] border-[#d2e4cb]'
+                              : 'bg-stone-100 text-stone-600 border-stone-200'
                           }`}
                         >
                           {r.source === 'photo_assisted' ? 'Photo Audited' : 'Manual Entry'}
@@ -355,10 +361,10 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({
                       </td>
 
                       {/* Actions */}
-                      <td className="py-3 px-4 text-right">
+                      <td className="py-3 px-5 text-right">
                         <button
                           onClick={() => handleDelete(r.id, r.medicine_name)}
-                          className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition"
+                          className="p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition cursor-pointer"
                           title="Delete record"
                         >
                           <Trash2 className="w-4 h-4" />

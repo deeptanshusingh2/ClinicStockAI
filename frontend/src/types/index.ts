@@ -87,6 +87,7 @@ export interface OllamaStatus {
   base_url: string;
   active_model: string;
   available_models: string[];
+  model_available?: boolean;
   message: string;
 }
 
