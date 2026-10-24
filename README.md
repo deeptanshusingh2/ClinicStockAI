@@ -1,4 +1,4 @@
-# ClinicStock AI — VisionStock
+# ClinicStock AI 
 
 > **"Scan the shelf. Review the evidence. Verify the stock."**  
 > *AI drafts the inventory; authorized staff verify it.*
